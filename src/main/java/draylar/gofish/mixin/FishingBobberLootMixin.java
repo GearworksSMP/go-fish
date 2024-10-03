@@ -2,6 +2,7 @@ package draylar.gofish.mixin;
 
 import draylar.gofish.api.FireproofEntity;
 import draylar.gofish.impl.GoFishLootTables;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
@@ -13,6 +14,7 @@ import net.minecraft.loot.LootTable;
 import net.minecraft.loot.LootTables;
 import net.minecraft.loot.context.LootContext;
 import net.minecraft.loot.context.LootContextParameterSet;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
@@ -40,6 +42,14 @@ public abstract class FishingBobberLootMixin extends Entity {
     private LootTable getTable(LootManager lootManager, Identifier id) {
         assert getWorld().getServer() != null;
 
+        FishingBobberEntity bobber = (FishingBobberEntity) (Object) this;
+        Entity owner = bobber.getOwner();
+
+        if (!(owner instanceof ServerPlayerEntity) || (owner instanceof FakePlayer)) {
+            // If a fishing is being done by a fake player give regular loot
+            return this.getWorld().getServer().getLootManager().getLootTable(LootTables.FISHING_GAMEPLAY);
+        }
+
         final DimensionType dimension = getWorld().getDimension();
         if(dimension.ultrawarm()) {
             return this.getWorld().getServer().getLootManager().getLootTable(GoFishLootTables.NETHER_FISHING);
@@ -48,7 +58,7 @@ public abstract class FishingBobberLootMixin extends Entity {
         }
 
         // Default
-        return this.getWorld().getServer().getLootManager().getLootTable(LootTables.FISHING_GAMEPLAY);
+        return this.getWorld().getServer().getLootManager().getLootTable(GoFishLootTables.OVERWORLD_FISHING);
     }
 
     @Inject(
